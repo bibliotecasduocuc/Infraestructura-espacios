@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infraestructura y espacios · Observatorio de Bibliotecas Duoc UC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<style>
+:root{
+  --ink:#1A1A1A; --ink-2:#1A1A1A; --paper:#EEEEEE; --surface:#FFFFFF;
+  --rule:#DDDDDD; --muted:#666666; --duoc:#FFB800; --duoc-soft:#FFF1CC;
+  --ok:#2F8F6B; --mid:#E2A33A; --bad:#C2483A; --none:#DDDDDD;
+  --sans:"Lato", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --display:"Merriweather", Georgia, "Times New Roman", serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--sans)}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.2}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--duoc);outline-offset:2px}
+
+header.top{background:var(--ink);color:#fff;padding:20px 28px 18px;border-bottom:6px solid var(--duoc)}
+header.top h1{font-size:1.5rem;font-weight:700;letter-spacing:0}
+header.top p{margin:4px 0 0;color:#CCCCCC;font-size:.9rem}
+
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+header.top > div:first-child{flex:1 1 420px;min-width:0}
+.picker{display:flex;flex-direction:column;gap:4px}
+.picker label{font-size:.82rem;color:#CCCCCC}
+.picker select{font:600 1rem var(--sans);color:var(--ink);background:#fff;border:0;border-radius:6px;padding:9px 36px 9px 12px;min-width:260px;cursor:pointer;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+main{padding:22px 28px 60px;max-width:1500px;margin:0 auto}
+nav.tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule);margin-bottom:22px;overflow-x:auto}
+nav.tabs button{border:0;background:none;padding:10px 16px;font-family:var(--sans);font-weight:700;font-size:.98rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--duoc)}
+
+.scope{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.scope h2{font-size:1.9rem;font-weight:800;letter-spacing:-.015em}
+.scope span{color:var(--muted)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--ink);border-radius:6px;padding:12px 14px}
+.kpi b{display:block;font-family:var(--sans);font-size:clamp(1.25rem,2vw,1.6rem);font-weight:700;line-height:1.1}
+.kpi small{color:var(--muted);font-size:.84rem}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 18px 16px;margin-bottom:20px;min-width:0}
+.panel h3{font-size:1.08rem;font-weight:700;margin-bottom:4px}
+.panel .note{color:var(--muted);font-size:.85rem;margin:0 0 12px}
+.chart-box{position:relative;height:320px}
+.chart-box.tall{height:520px}
+
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-family:var(--sans);font-weight:700;font-size:.82rem;color:var(--muted);background:var(--paper)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.sel td{background:var(--duoc-soft);font-weight:600}
+
+table.matrix th.rot{writing-mode:vertical-rl;transform:rotate(180deg);height:130px;white-space:nowrap;text-align:left;vertical-align:bottom;padding:8px 4px}
+table.matrix td.c{text-align:center;font-size:.78rem;font-weight:600;padding:6px 3px;min-width:58px;border:2px solid var(--surface)}
+.s-ok{background:var(--ok);color:#fff}.s-mid{background:var(--mid);color:var(--ink)}.s-bad{background:var(--bad);color:#fff}
+.s-none{background:var(--none);color:var(--muted)}.s-empty{background:var(--paper);color:#999999}
+.s-pot1{background:#CFE8DD;color:var(--ink)}.s-pot2{background:#F6E2B8;color:var(--ink)}
+.keys{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin-top:10px}
+.keys i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.dist{display:grid;grid-template-columns:minmax(120px,max-content) 1fr 34px;gap:6px 10px;align-items:center;font-size:.88rem}
+.dist .bar{height:10px;background:var(--paper);border-radius:5px;overflow:hidden}
+.dist .bar i{display:block;height:100%;background:var(--ink-2)}
+.dist .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+.voice{border-left:4px solid var(--duoc);padding:4px 0 4px 16px;margin-bottom:26px}
+.voice h3{font-size:1.15rem;margin-bottom:8px}
+.voice dl{margin:0;display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:6px 18px}
+.voice dt{color:var(--muted);font-size:.86rem}
+.voice dd{margin:0;max-width:72ch}
+
+.msg{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--mid);padding:14px 18px;border-radius:6px;margin-bottom:18px}
+.msg.err{border-left-color:var(--bad)}
+.empty{color:var(--muted);font-style:italic}
+
+@media (max-width:860px){
+  .picker,.picker select{width:100%}
+  main{padding:16px}
+  .grid2{grid-template-columns:1fr}
+  .voice dl{grid-template-columns:1fr}
+}
+tfoot th{background:var(--paper);color:var(--ink);border-top:2px solid var(--ink)}
+table.sortable thead th{cursor:pointer;user-select:none;white-space:nowrap}
+table.sortable thead th:hover{color:var(--ink)}
+.print-btn{margin-left:auto;border:1px solid var(--ink);background:var(--surface);border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer}
+.print-btn:hover{background:var(--ink);color:#fff}
+dl.facts{margin:0;display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:8px 18px}
+dl.facts dt{color:var(--muted);font-size:.86rem}
+dl.facts dd{margin:0}
+/* Estado de carga */
+.overline{margin:0 0 4px;font:700 .78rem var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--duoc)}
+.estado{margin:6px 0 0;font-size:.9rem;color:#DDDDDD;display:flex;align-items:center;gap:8px}
+.estado.ok{color:var(--duoc)}
+.estado.error{color:#FF8A80}
+.spin{width:13px;height:13px;border:2px solid #666666;border-top-color:var(--duoc);border-radius:50%;animation:girar .8s linear infinite;flex:none}
+@keyframes girar{to{transform:rotate(360deg)}}
+/* Matrices y detalle */
+.f1{background:#FFF1CC;color:var(--ink)}.f2{background:#FFD466;color:var(--ink)}.f3{background:#FFB800;color:var(--ink)}.f4{background:#1A1A1A;color:#fff}
+.fo{background:#1A1A1A;color:#fff}.fi{background:#FFD466;color:var(--ink)}
+.s-none{background:#DDDDDD;color:#666666}.s-empty{background:var(--paper);color:#999999}
+.keys i.s-empty{border:1px solid #CCCCCC}
+table.matrix td:first-child{white-space:nowrap;font-weight:700}
+table.matrix th.rot{height:200px;white-space:nowrap;font-size:.78rem}
+.det-label{display:inline-flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px}
+.det-select{font:400 .95rem var(--sans);padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+/* Descargas */
+.panel{position:relative}
+.tools{position:absolute;top:14px;right:14px;display:flex;gap:6px}
+.tools button,.dl-bar button{border:1px solid var(--rule);background:var(--surface);border-radius:5px;padding:4px 10px;font:700 .78rem var(--sans);color:var(--ink);cursor:pointer}
+.tools button:hover,.dl-bar button:hover{background:var(--duoc);border-color:var(--duoc)}
+.panel > h3:first-of-type{padding-right:150px}
+.dl-bar{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.dl-bar button{padding:7px 14px;font-size:.85rem}
+.voice{position:relative}
+.voice .tools{top:0;right:0}
+.pdf-head{display:none;border-bottom:3px solid var(--duoc);padding-bottom:8px;margin-bottom:14px}
+.pdf-head b{font-family:var(--display);font-size:1.1rem;display:block}
+.pdf-head span{color:var(--muted);font-size:.85rem}
+body.exporting .tools,body.exporting .dl-bar{display:none!important}
+body.exporting .pdf-head{display:block}
+body.exporting .scroll{overflow:visible}
+body.exporting .grid2{display:block}
+body.exporting #view{max-width:1100px}
+body.exporting .chart-box.tall{height:460px}
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+  body{background:#fff;font-size:11px}
+  header.top{background:#fff;color:var(--ink);border-bottom:3px solid var(--duoc);padding:0 0 8px}
+  header.top p{color:var(--muted)}
+  .estado,.picker,nav.tabs,.print-btn,.tools,.dl-bar,#messages{display:none!important}
+  .pdf-head{display:block}
+  main{padding:10px 0;max-width:none}
+  .panel,.kpi{break-inside:avoid;box-shadow:none}
+  .scroll{overflow:visible}
+  th,td{padding:4px 6px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="overline">Observatorio de Gestión y Desarrollo de Bibliotecas Duoc UC</p>
+    <h1>Infraestructura y espacios</h1>
+    <p id="estado" class="estado cargando" role="status" aria-live="polite"><span class="spin" aria-hidden="true"></span>Cargando los datos, espera un momento…</p>
+  </div>
+  <div class="picker">
+    <label for="sedeSelect">Biblioteca</label>
+    <select id="sedeSelect"><option value="">Toda la red</option></select>
+  </div>
+</header>
+
+<main>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div id="messages"></div>
+    <section id="view" aria-live="polite"></section>
+  </main>
+
+<script>
+/* ================== DASHBOARD ==================
+   Este archivo y el otro dashboard comparten el mismo código.
+   Solo cambia este bloque: nombre, pestañas y fuentes de datos que se cargan. */
+const DASH = { nombre:'Infraestructura y espacios',
+  tabs:[['espacios','Espacios y capacidad'],['ubicacion','Ubicación y equipamiento'],['uso','Uso de la biblioteca'],['horario','Horario de atención']],
+  fuentes:['espacios','matricula','horarios','accesos','respuestas'] };
+
+/* ================== CONFIGURACIÓN ================== */
+const CONFIG = {
+  espacios:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBEfLu2PoNtVUK_NgqvAVcRw9tRw1-gGvXsinVkZ1CP9jMxoxWv3JBKoNxg1NDb0GHeEgwganpMR2_/pub?gid=1523262154&single=true&output=csv",
+  respuestas: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBEfLu2PoNtVUK_NgqvAVcRw9tRw1-gGvXsinVkZ1CP9jMxoxWv3JBKoNxg1NDb0GHeEgwganpMR2_/pub?gid=1159156740&single=true&output=csv",
+  matricula:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBEfLu2PoNtVUK_NgqvAVcRw9tRw1-gGvXsinVkZ1CP9jMxoxWv3JBKoNxg1NDb0GHeEgwganpMR2_/pub?gid=697824584&single=true&output=csv",
+  horarios:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vSBEfLu2PoNtVUK_NgqvAVcRw9tRw1-gGvXsinVkZ1CP9jMxoxWv3JBKoNxg1NDb0GHeEgwganpMR2_/pub?gid=2126200069&single=true&output=csv",
+  accesos:    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSnXomreT9d7YMgsZCsb8Gsm8MY58G9_AsukqaQfx2soRc3QT3L5j5xlVCCDGIpyaqp40_WM4wCKQkF/pub?gid=954330324&single=true&output=csv"
+};
+
+const SEDES = ['Alameda','Antonio Varas','Arauco','Concepción','Maipú','Melipilla','Nacimiento',
+  'Padre Alonso de Ovalle','Plaza Norte','Plaza Oeste','Plaza Vespucio','Puente Alto','Puerto Montt',
+  'San Bernardo','San Carlos','San Joaquín','Valparaíso','Valparaíso (Luis Cousiño)','Viña del Mar','Villarrica'];
+
+const ESPACIOS = [
+  ['Zona de Libros','Libros'],['Atención y Orientación','Atención'],['Estudio Individual','Estudio individual'],
+  ['Salas de Trabajo Colaborativo','Colaborativo'],['Zona de Competencias','Competencias'],
+  ['Realidad Virtual','Realidad virtual']];
+// Horario de respaldo: el dashboard usa la pestaña Horarios de la hoja; estos valores solo se usan si no carga. Formato: días hora-hora, separados por " · ".
+const HORARIOS = {
+  'Alameda':'Lu-Ma 8:30-22:30 · Mi-Vi 8:30-21:30 · Sá 9:00-14:00',
+  'Padre Alonso de Ovalle':'Lu-Vi 8:15-22:30 · Sá 8:30-16:00',
+  'Antonio Varas':'Lu-Ma 8:30-22:00 · Mi-Vi 8:30-21:00 · Sá 9:00-14:00',
+  'Arauco':'Lu-Vi 8:30-22:40 · Sá 9:00-13:40',
+  'Concepción':'Lu-Ma 8:30-22:00 · Mi-Vi 8:30-21:00 · Sá 8:30-13:30',
+  'Maipú':'Lu-Ma 8:30-22:00 · Mi-Vi 8:30-21:00 · Sá 8:30-14:00',
+  'Melipilla':'Lu-Vi 8:30-22:30 · Sá 9:00-14:00',
+  'Nacimiento':'Lu-Vi 8:30-22:00 · Sá 8:30-13:00',
+  'Plaza Norte':'Lu-Ma 8:30-22:00 · Mi-Vi 8:30-21:00 · Sá 9:00-13:30',
+  'Plaza Oeste':'Lu-Vi 8:30-22:00 · Sá 9:00-14:00',
+  'Plaza Vespucio':'Lu-Ma 8:30-22:00 · Mi-Vi 8:30-21:00 · Sá 9:00-14:00',
+  'Puente Alto':'Lu-Vi 8:00-22:00 · Sá 8:00-14:00',
+  'Puerto Montt':'Lu-Vi 8:00-21:00 · Sá 8:30-13:00',
+  'San Bernardo':'Lu-Ma 8:30-22:20 · Mi-Vi 8:30-21:20 · Sá 8:30-15:00',
+  'San Carlos':'Lu-Vi 8:30-21:00 · Sá cerrado',
+  'San Joaquín':'Lu-Vi 8:30-22:30 · Sá 8:30-14:00',
+  'Valparaíso':'Lu-Ma 8:30-22:30 · Mi-Vi 8:30-21:30 · Sá 8:00-13:00',
+  'Villarrica':'Lu-Mi 8:30-22:00 · Ju-Vi 8:30-21:00 · Sá 8:15-13:15',
+  'Viña del Mar':'Lu-Mi 8:45-22:15 · Ju-Vi 8:45-21:15 · Sá 8:45-13:15'
+};
+const DIAS = ['lu','ma','mi','ju','vi','sa'];
+function parseHorario(str){
+  if (!str) return null;
+  const min = t => { const [hh,mm] = t.split(':').map(Number); return hh*60 + (mm||0); };
+  let horas = 0, horasSab = 0; const semana = [], sab = [];
+  str.split('·').map(s => s.trim()).forEach(tramo => {
+    const m = tramo.match(/^(\S+)\s+(.*)$/); if (!m) return;
+    const dias = norm(m[1]).split('-'); const i = DIAS.indexOf(dias[0]), j = DIAS.indexOf(dias[dias.length-1]);
+    const n = i >= 0 && j >= i ? j - i + 1 : 1;
+    const hr = m[2].match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    if (hr){ const hh = n * (min(hr[2]) - min(hr[1])) / 60; horas += hh; if (dias[0] === 'sa') horasSab += hh; }
+    (dias[0] === 'sa' ? sab : semana).push(dias[0] === 'sa' ? m[2] : tramo);
+  });
+  return { semana: semana.join(' · '), sabado: sab.join('') || '–', horas, horasSab };
+}
+
+// Matrícula de respaldo: el dashboard usa la pestaña Matricula de la hoja; estos valores solo se usan si no carga. Luis Cousiño está incluida en Valparaíso.
+let PERIODO_MAT = 'Matrícula';
+const MATRICULA = {'Alameda':4267,'Antonio Varas':7374,'Maipú':12281,'Melipilla':3526,'Padre Alonso de Ovalle':6436,
+  'Plaza Norte':6132,'Plaza Oeste':3415,'Plaza Vespucio':6003,'Puente Alto':9309,'San Bernardo':9289,'San Carlos':4847,
+  'San Joaquín':6827,'Arauco':889,'Nacimiento':562,'Concepción':6815,'Valparaíso':9563,'Viña del Mar':8327,
+  'Puerto Montt':3983,'Villarrica':899};
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const TABS = DASH.tabs;
+
+/* ================== UTILIDADES ================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/^biblioteca\s+/,'').replace(/^sede\s+/,'').replace(/\s+/g,' ').trim();
+const fmt = (n, d=0) => n == null || isNaN(n) ? '–' : n.toLocaleString('es-CL',{maximumFractionDigits:d, minimumFractionDigits:d});
+
+function num(v){
+  if (v == null) return null;
+  let s = String(v).trim().replace(/\s/g,'');
+  if (!s) return null;
+  if (s.includes(',') && s.includes('.')) s = s.replace(/\./g,'').replace(',','.');
+  else if (s.includes(',')) s = s.replace(',','.');
+  const x = parseFloat(s);
+  return isNaN(x) ? null : x;
+}
+function canonSede(raw){
+  const n = norm(raw);
+  if (!n) return null;
+  if (n.includes('cousi') || /\blc$/.test(n)) return 'Valparaíso (Luis Cousiño)';
+  if (n.includes('alonso') || n.includes('ovalle')) return 'Padre Alonso de Ovalle';
+  if (n.startsWith('san carlos')) return 'San Carlos';
+  if (n.includes('vina')) return 'Viña del Mar';
+  const exact = SEDES.find(s => norm(s) === n);
+  if (exact) return exact;
+  const near = SEDES.find(s => n.startsWith(norm(s)) || norm(s).startsWith(n));
+  return near || String(raw).trim();
+}
+// Si una pregunta se reemplazó en el formulario, la columna vigente es la última con ese número.
+const findCol = (headers, prefix) => [...headers].reverse().find(h => h.startsWith(prefix + ' ')) || null;
+const findByName = (headers, ...names) => {
+  for (const nm of names){ const h = headers.find(x => norm(x) === norm(nm)); if (h) return h; }
+  for (const nm of names){ const h = headers.find(x => norm(x).includes(norm(nm))); if (h) return h; }
+  return null;
+};
+function gridCols(headers, prefix){
+  return headers.filter(h => h.startsWith(prefix + ' ') && h.includes('['))
+    .map(h => ({h, row: h.slice(h.lastIndexOf('[')+1, h.lastIndexOf(']')).trim()}));
+}
+const short = (row, list) => (list.find(([k]) => norm(row).startsWith(norm(k))) || [null,row])[1];
+const countBy = (arr, fn) => arr.reduce((m,x) => { const k = fn(x); if (k != null && k !== '') m.set(k,(m.get(k)||0)+1); return m; }, new Map());
+const sumBy = (arr, keyFn, valFn) => arr.reduce((m,x) => { const k = keyFn(x); if (k) m.set(k,(m.get(k)||0)+(valFn(x)||0)); return m; }, new Map());
+const multiHas = (value, option) => String(value || '').includes(option);
+
+/* ================== ESTADO ================== */
+const S = { accesos:[], accMeses:[], espacios:[], resp:[], respHeaders:[], sede:null, tab:DASH.tabs[0][0], orden:null, charts:{} };
+
+function loadCSV(url){
+  // Se arma la tabla a mano: el modo header de PapaParse rompe los encabezados con comas cuando hay nombres repetidos.
+  return new Promise((res, rej) => Papa.parse(url, {
+    download:true, header:false, skipEmptyLines:'greedy',
+    complete:r => {
+      const [head = [], ...rows] = r.data;
+      const seen = {};
+      const fields = head.map(h => { const k = String(h).trim(); seen[k] = (seen[k] || 0) + 1; return seen[k] > 1 ? `${k} #${seen[k]}` : k; });
+      res({ meta:{fields}, data: rows.map(row => Object.fromEntries(fields.map((f,i) => [f, row[i] ?? '']))) });
+    },
+    error:e => rej(e)
+  }));
+}
+
+function loadRaw(url){
+  return new Promise((res, rej) => Papa.parse(url, { download:true, header:false, skipEmptyLines:'greedy', complete:r => res(r.data), error:e => rej(e) }));
+}
+const entero = v => { const s = String(v ?? '').replace(/[.,\s]/g,''); if (!s) return null; const x = parseInt(s,10); return isNaN(x) ? null : x; };
+
+const CARGADORES = {espacios:loadCSV, respuestas:loadCSV, matricula:loadCSV, horarios:loadCSV, accesos:loadRaw};
+const NOMBRES_FUENTE = {espacios:'Espacios', respuestas:'Respuestas_publico', matricula:'Matricula', horarios:'Horarios', accesos:'Cuenta personas (accesos)'};
+async function init(){
+  buildTabs();
+  const res = {};
+  await Promise.all(DASH.fuentes.map(async k => {
+    try { res[k] = {ok:true, v: await CARGADORES[k](CONFIG[k])}; } catch (e) { res[k] = {ok:false}; }
+  }));
+  const fallidas = DASH.fuentes.filter(k => !res[k].ok);
+  $('#messages').innerHTML = fallidas.map(k => `<div class="msg err">No se pudo leer <b>${NOMBRES_FUENTE[k]}</b>. Revisa que la pestaña siga publicada como CSV y que el enlace en CONFIG sea el correcto.</div>`).join('');
+  // Matrícula y horarios desde la hoja (si no cargan, quedan los valores de respaldo del código)
+  if (res.matricula?.ok){
+    const d = res.matricula.v, f = d.meta.fields;
+    const cS = findByName(f,'Sede'), cM = findByName(f,'Matricula','Matrícula'), cP = findByName(f,'Periodo','Período');
+    const nueva = {};
+    d.data.forEach(r => { const s = canonSede(r[cS]), v = entero(r[cM]); if (s && v) nueva[s] = v; });
+    if (Object.keys(nueva).length){ Object.keys(MATRICULA).forEach(k => delete MATRICULA[k]); Object.assign(MATRICULA, nueva); }
+    const per = cP ? d.data.map(r => String(r[cP] || '').trim()).find(Boolean) : '';
+    if (per) PERIODO_MAT = `Matrícula ${per}`;
+  }
+  if (res.horarios?.ok){
+    const d = res.horarios.v, f = d.meta.fields;
+    const cS = findByName(f,'Sede'), cH = findByName(f,'Horario');
+    const nuevo = {};
+    d.data.forEach(r => { const s = canonSede(r[cS]); if (s && String(r[cH] || '').trim()) nuevo[s] = String(r[cH]).trim(); });
+    if (Object.keys(nuevo).length){ Object.keys(HORARIOS).forEach(k => delete HORARIOS[k]); Object.assign(HORARIOS, nuevo); }
+  }
+  const est = $('#estado');
+  if (fallidas.length === DASH.fuentes.length){ est.className = 'estado error'; est.textContent = '✕ No se pudieron cargar los datos. Revisa tu conexión e intenta recargar la página.'; }
+  else if (fallidas.length){ est.className = 'estado error'; est.textContent = `⚠ Datos cargados parcialmente: ${fallidas.length} de ${DASH.fuentes.length} fuentes no respondieron (detalle abajo).`; }
+  else { est.className = 'estado ok'; est.textContent = '✓ Datos cargados correctamente.'; }
+
+  if (res.espacios?.ok){
+    S.espacios = res.espacios.v.data.map(r => {
+      const h = Object.keys(r);
+      const g = (...n) => r[findByName(h, ...n)];
+      return {
+        sede: canonSede(g('Sede')),
+        estanteria: num(g('Estanteria_ml','Estantería')),
+        atencion: num(g('Puntos_atencion','Puntos de atención')),
+        habitaculos: num(g('Habitaculos_individuales','Habitáculos')),
+        salas: num(g('N_salas','salas')),
+        capacidad: num(g('Capacidad_aforo','capacidad')),
+        m2: num(g('m2_totales','m²')),
+        obs: g('Observaciones') || ''
+      };
+    }).filter(r => r.sede);
+  }
+  if (res.respuestas?.ok){
+    const h = res.respuestas.v.meta.fields || [];
+    S.respHeaders = h;
+    const sedeCol = h.find(x => norm(x) === 'sede');
+    const latest = new Map();
+    res.respuestas.v.data.forEach(r => { const s = canonSede(r[sedeCol]); if (s) latest.set(s, {...r, __sede:s}); });
+    S.resp = [...latest.values()];
+  }
+  if (res.accesos?.ok){
+    // Planilla "Cuenta personas": fila de títulos, luego Sede + 12 meses + total anual (se ignora y se recalcula).
+    const raw = res.accesos.v;
+    const hi = raw.findIndex(r => norm(r[0]) === 'sede');
+    if (hi >= 0){
+      const head = raw[hi].map(x => norm(x));
+      const idx = MESES.map(m => head.indexOf(m));
+      const filas = raw.slice(hi+1).filter(r => r[0] && norm(r[0]) !== 'total')
+        .map(r => ({ sede: canonSede(r[0]), meses: idx.map(i => i >= 0 ? entero(r[i]) : null) }));
+      // Un mes cuenta si alguna biblioteca tiene registros; un 0 dentro de un mes con datos se trata como "sin registro".
+      S.accMeses = MESES.map((m,i) => filas.some(f => (f.meses[i]||0) > 0));
+      S.accesos = filas.map(f => ({ sede:f.sede, meses: f.meses.map((v,i) => S.accMeses[i] && v > 0 ? v : null) }))
+        .map(f => ({...f, total: f.meses.reduce((a,v)=>a+(v||0),0), ceros: f.meses.filter((v,i)=>S.accMeses[i] && v == null).length}));
+    }
+  }
+  buildSedes();
+  render();
+}
+
+function buildTabs(){
+  $('#tabs').innerHTML = TABS.map(([k,l]) => `<button role="tab" data-tab="${k}" aria-selected="${k===S.tab}">${l}</button>`).join('');
+  $('#tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.tab = b.dataset.tab;
+    document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-selected', x === b)); render(); };
+}
+function buildSedes(){
+  const answered = new Set(S.resp.map(r => r.__sede));
+  const sel = $('#sedeSelect');
+  sel.innerHTML = `<option value="">Toda la red</option>` +
+    SEDES.map(s => `<option value="${esc(s)}">${esc(s)}${answered.has(s) ? '  ✓ respondió' : ''}</option>`).join('');
+  sel.value = S.sede || '';
+  sel.onchange = () => { S.sede = sel.value || null; render(); };
+}
+
+/* ================== RENDER ================== */
+function chart(id, cfg){
+  if (S.charts[id]) S.charts[id].destroy();
+  const el = document.getElementById(id); if (!el) return;
+  S.charts[id] = new Chart(el, cfg);
+}
+Chart.defaults.font.family = '"Lato", system-ui, sans-serif';
+Chart.defaults.color = '#666666';
+Chart.defaults.locale = 'es-CL';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+const INK = '#1A1A1A', DUOC = '#FFB800', GREY = '#CCCCCC';
+const PALETTE = ['#1A1A1A','#FFB800','#666666','#BBBBBB','#FFD466','#444444','#999999','#FFE9A8','#2B2B2B','#DDDDDD'];
+
+function scopeTitle(extra=''){
+  return `<div class="scope"><h2>${S.sede ? esc(S.sede) : 'Toda la red'}</h2><span>${extra}</span></div>`;
+}
+function kpis(items){ return `<div class="kpis">${items.map(([v,l]) => `<div class="kpi"><b>${v}</b><small>${l}</small></div>`).join('')}</div>`; }
+function dist(entries, opts={}){
+  if (!entries.length) return `<p class="empty">Sin datos todavía.</p>`;
+  const max = Math.max(...entries.map(e => e[1]), 1);
+  return `<div class="dist">${entries.map(([l,v]) => `<span>${esc(l)}</span><span class="bar"><i style="width:${v/max*100}%"></i></span><span class="v">${v}</span>`).join('')}</div>`;
+}
+function render(){
+  Object.values(S.charts).forEach(c => c.destroy()); S.charts = {};
+  ({espacios:renderEspacios, uso:renderUso, horario:renderHorario, ubicacion:renderUbicacion,
+    actividades:renderActividades, articulacion:renderArticulacionSede, gobernanza:renderGobernanza,
+    prioridades:renderPrioridades, necesidades:renderNecesidades}[S.tab])();
+  decorar();
+}
+const respFor = () => S.sede ? S.resp.filter(r => r.__sede === S.sede) : S.resp;
+const answerOf = (sede, prefix) => { const r = S.resp.find(x => x.__sede === sede); const c = findCol(S.respHeaders, prefix); return r && c ? r[c] : null; };
+
+/* ---------- 1. Espacios y capacidad ---------- */
+// Valparaíso (Luis Cousiño) comparte matrícula con Valparaíso: para los indicadores por estudiante se suman ambas bibliotecas.
+const grupoMat = s => s === 'Valparaíso (Luis Cousiño)' ? 'Valparaíso' : s;
+function porSedeMatricula(){
+  const g = new Map();
+  S.espacios.forEach(r => {
+    const k = grupoMat(r.sede);
+    const o = g.get(k) || {sede:k, m2:0, capacidad:0, mat:MATRICULA[k] ?? null, libs:0};
+    o.m2 += r.m2 || 0; o.capacidad += r.capacidad || 0; o.libs++;
+    g.set(k, o);
+  });
+  return [...g.values()].map(o => ({...o, label: o.libs > 1 ? `${o.sede} (2 bibliotecas)` : o.sede,
+    m2x100: o.mat ? o.m2 / o.mat * 100 : null, matXpuesto: o.capacidad ? o.mat / o.capacidad : null}));
+}
+function horasKPI(){
+  const hs = (S.sede ? [S.sede] : SEDES).map(s => parseHorario(HORARIOS[s])).filter(Boolean).map(x => x.horas);
+  return hs.length ? hs.reduce((a,b)=>a+b,0) / hs.length : null;
+}
+function renderEspacios(){
+  const rows = S.sede ? S.espacios.filter(r => r.sede === S.sede) : S.espacios;
+  const sum = k => rows.reduce((a,r) => a + (r[k]||0), 0);
+  const grupos = porSedeMatricula();
+  const g = S.sede ? grupos.find(x => x.sede === grupoMat(S.sede)) : null;
+  const m2 = S.sede ? g?.m2 : grupos.reduce((a,x)=>a+x.m2,0);
+  const cap = S.sede ? g?.capacidad : grupos.reduce((a,x)=>a+x.capacidad,0);
+  const mat = S.sede ? g?.mat : grupos.reduce((a,x)=>a+(x.mat||0),0);
+  const notaVal = S.sede && grupoMat(S.sede) === 'Valparaíso'
+    ? '<div class="msg">La sede Valparaíso tiene dos bibliotecas (Valparaíso y Luis Cousiño). La matrícula y los indicadores por estudiante consideran ambas juntas.</div>' : '';
+
+  $('#view').innerHTML = scopeTitle(S.sede ? '' : `${rows.length} bibliotecas`) + notaVal +
+    kpis([[fmt(mat),`estudiantes matriculados (${PERIODO_MAT.replace(/^Matrícula\s*/,'') || 'matrícula vigente'})`],[fmt(sum('m2')),'m² de biblioteca'],[fmt(sum('capacidad')),'puestos de estudio'],
+      [fmt(mat ? m2/mat*100 : null,1),'m² de biblioteca por cada 100 estudiantes'],[fmt(cap ? mat/cap : null,0),'estudiantes matriculados por puesto'],
+      [fmt(sum('salas')),'salas de estudio'],[fmt(sum('habitaculos')),'cubículos de estudio individual'],
+      [fmt(sum('estanteria')),'metros lineales de estantería'],[fmt(sum('atencion')),'puntos de atención a usuarios']]) +
+    `<div class="grid2">
+      <div class="panel"><h3>Superficie de biblioteca por cada 100 estudiantes matriculados</h3><p class="note">m² de biblioteca dividido por la matrícula de la sede, multiplicado por 100. Un valor más bajo indica menos espacio disponible para la cantidad de estudiantes.</p><div class="chart-box tall"><canvas id="cHol"></canvas></div></div>
+      <div class="panel"><h3>Estudiantes matriculados por cada puesto de estudio</h3><p class="note">Cuántos estudiantes de la sede compiten por cada puesto. Un valor más alto indica mayor presión sobre los puestos.</p><div class="chart-box tall"><canvas id="cCap"></canvas></div></div>
+    </div>
+    <div class="panel"><h3>Datos de cada biblioteca</h3><p class="note">${esc(PERIODO_MAT)}. En Valparaíso los indicadores por estudiante suman sus dos bibliotecas.</p><div class="scroll"><table>
+      <thead><tr><th>Biblioteca</th><th class="n">Matrícula sede</th><th class="n">m²</th><th class="n">m² por 100 est.</th><th class="n">Puestos</th><th class="n">Est. por puesto</th><th class="n">Salas</th><th class="n">Cubículos</th><th class="n">Estantería (ml)</th><th class="n">Puntos de atención</th><th>Observaciones</th></tr></thead>
+      <tbody>${S.espacios.map(r => { const gg = grupos.find(x => x.sede === grupoMat(r.sede)); const shared = grupoMat(r.sede) !== r.sede || (gg && gg.libs > 1);
+        return `<tr class="${r.sede===S.sede?'sel':''}"><td>${esc(r.sede)}</td><td class="n">${fmt(gg?.mat)}${shared?'*':''}</td><td class="n">${fmt(r.m2,1)}</td><td class="n">${fmt(gg?.m2x100,1)}${shared?'*':''}</td><td class="n">${fmt(r.capacidad)}</td><td class="n">${fmt(gg?.matXpuesto,0)}${shared?'*':''}</td><td class="n">${fmt(r.salas)}</td><td class="n">${fmt(r.habitaculos)}</td><td class="n">${fmt(r.estanteria)}</td><td class="n">${fmt(r.atencion)}</td><td>${esc(r.obs)}</td></tr>`; }).join('')}</tbody>
+    </table></div><p class="note" style="margin-top:8px">* Valor compartido por las dos bibliotecas de la sede Valparaíso.</p></div>`;
+
+  const sel = x => !S.sede || x.sede === grupoMat(S.sede);
+  const col = arr => arr.map(x => S.sede ? (sel(x) ? DUOC : GREY) : INK);
+  const hol = grupos.filter(x => x.m2x100 != null).sort((a,b) => a.m2x100 - b.m2x100);
+  chart('cHol',{type:'bar',data:{labels:hol.map(x=>x.label),datasets:[{data:hol.map(x=>+x.m2x100.toFixed(1)),backgroundColor:col(hol)}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'m² por cada 100 estudiantes'}}}}});
+  const mp = grupos.filter(x => x.matXpuesto != null).sort((a,b) => b.matXpuesto - a.matXpuesto);
+  chart('cCap',{type:'bar',data:{labels:mp.map(x=>x.label),datasets:[{data:mp.map(x=>Math.round(x.matXpuesto)),backgroundColor:col(mp)}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'estudiantes por puesto'}}}}});
+}
+
+/* ---------- 2. Infraestructura ---------- */
+function optionCounts(prefix, options){
+  const c = findCol(S.respHeaders, prefix); if (!c) return [];
+  const rr = respFor();
+  return options.map(o => [o, rr.filter(r => multiHas(r[c], o)).length]).filter(e => e[1] > 0 || S.sede === null);
+}
+function singleCounts(prefix){
+  const c = findCol(S.respHeaders, prefix); if (!c) return [];
+  return [...countBy(respFor(), r => r[c])].sort((a,b) => b[1]-a[1]);
+}
+// Suma mensual; queda vacía si ninguna biblioteca del grupo tiene registro ese mes.
+const accPorMes = rows => MESES.map((m,i) => { if (!S.accMeses[i]) return null; const v = rows.filter(r => r.meses[i] != null); return v.length ? v.reduce((a,r)=>a+r.meses[i],0) : null; });
+function accesosHTML(){
+  if (!S.accesos.length) return `<div class="msg">No hay datos de accesos. Revisa la publicación de la planilla Cuenta personas.</div>`;
+  const rows = S.sede ? S.accesos.filter(a => a.sede === S.sede) : S.accesos;
+  const total = rows.reduce((a,r)=>a+r.total,0);
+  const mesesCon = MESES.filter((m,i) => S.accMeses[i]);
+  const porMes = accPorMes(rows);
+  const imax = porMes.reduce((b,v,i) => v != null && (b < 0 || v > porMes[b]) ? i : b, -1);
+  const sinReg = rows.filter(r => r.ceros).map(r => `${r.sede} (${MESES.filter((m,i)=>S.accMeses[i] && r.meses[i]==null).join(', ')})`);
+  const rango = mesesCon.length ? `${mesesCon[0]} a ${mesesCon[mesesCon.length-1]}` : '';
+  return kpis([[fmt(total),`accesos registrados (${rango})`],[fmt(porMes.filter(v=>v!=null).length ? total/porMes.filter(v=>v!=null).length : null),'accesos promedio por mes con registro'],
+      S.sede ? [fmt(S.accesos.reduce((a,r)=>a+r.total,0) ? total/S.accesos.reduce((a,r)=>a+r.total,0)*100 : null,1)+'%','de los accesos de toda la red']
+             : [esc([...S.accesos].sort((a,b)=>b.total-a.total)[0]?.sede || '–'),'biblioteca con más accesos'],[imax >= 0 ? MESES[imax][0].toUpperCase()+MESES[imax].slice(1) : '–','mes con más accesos']]) +
+    `<div class="grid2">
+      <div class="panel"><h3>Accesos a la biblioteca por mes</h3><p class="note">Personas que ingresaron según los contadores de las puertas.</p><div class="chart-box tall"><canvas id="cAccMes"></canvas></div>
+        ${sinReg.length ? `<p class="note" style="margin-top:10px">Sin registro del contador: ${esc(sinReg.join('; '))}.</p>` : ''}</div>
+      <div class="panel"><h3>Accesos por biblioteca</h3><p class="note">Total de personas que ingresaron a cada biblioteca de ${rango}.</p><div class="chart-box tall"><canvas id="cAccEst"></canvas></div></div>
+    </div>`;
+}
+function accesosCharts(){
+  if (!S.accesos.length) return;
+  const rows = S.sede ? S.accesos.filter(a => a.sede === S.sede) : S.accesos;
+  const idx = MESES.map((m,i)=>i).filter(i => S.accMeses[i]);
+  chart('cAccMes',{type:'line',data:{labels:idx.map(i=>MESES[i][0].toUpperCase()+MESES[i].slice(1,3)),
+    datasets:[{data:idx.map(i => accPorMes(rows)[i]),borderColor:INK,backgroundColor:DUOC,pointRadius:4,tension:0,spanGaps:false}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  const arr = [...S.accesos].sort((a,b)=>b.total-a.total);
+  chart('cAccEst',{type:'bar',data:{labels:arr.map(a=>a.sede),datasets:[{data:arr.map(a=>a.total),
+    backgroundColor:arr.map(a => S.sede ? (a.sede === S.sede ? DUOC : GREY) : INK)}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'accesos'}}}}});
+}
+function renderUso(){
+  $('#view').innerHTML = scopeTitle('Personas que ingresan a la biblioteca') + accesosHTML();
+  accesosCharts();
+}
+function renderHorario(){
+  const sedes = S.sede ? [S.sede] : SEDES;
+  const hs = sedes.map(s => parseHorario(HORARIOS[s])).filter(Boolean);
+  const prom = k => hs.length ? hs.reduce((a,x)=>a+x[k],0) / hs.length : null;
+  const abrenSab = hs.filter(x => x.horasSab > 0).length;
+  $('#view').innerHTML = scopeTitle('Horario vigente de atención') +
+    kpis(S.sede
+      ? [[fmt(prom('horas'),1),'horas de atención a la semana'],[fmt(hs[0] ? hs[0].horas - hs[0].horasSab : null,1),'horas de lunes a viernes'],[fmt(prom('horasSab'),1),'horas el sábado']]
+      : [[fmt(prom('horas'),1),'horas de atención a la semana (promedio por biblioteca)'],[fmt(prom('horasSab'),1),'horas el sábado (promedio)'],[`${abrenSab} de ${hs.length}`,'bibliotecas abren el sábado']]) +
+    `<div class="panel"><h3>Horario de atención de cada biblioteca</h3><p class="note">Horario de lunes a viernes, del sábado y total de horas que atiende a la semana.</p><div class="scroll"><table>
+      <thead><tr><th>Biblioteca</th><th>Lunes a viernes</th><th>Sábado</th><th class="n">Horas a la semana</th></tr></thead>
+      <tbody>${sedes.map(s => { const hz = parseHorario(HORARIOS[s]);
+        return `<tr><td>${esc(s)}</td><td>${hz ? esc(hz.semana) : '<span class="empty">sin dato</span>'}</td><td>${hz ? esc(hz.sabado) : ''}</td><td class="n">${hz ? fmt(hz.horas,1) : '–'}</td></tr>`; }).join('')}</tbody>
+    </table></div></div>`;
+}
+function renderUbicacion(){
+  const rr = respFor();
+  const ub = findCol(S.respHeaders,'2.1'), pl = findCol(S.respHeaders,'2.2'), eq = findCol(S.respHeaders,'3.1');
+  const equipo = ['Computadores de escritorio','Notebooks en préstamo','Pantallas interactivas','Proyector','Impresora / escáner','Impresora 3D','Kit de grabación'];
+  const sedes = S.sede ? [S.sede] : SEDES;
+  $('#view').innerHTML = scopeTitle(S.sede ? '' : `${rr.length} ${rr.length===1?'biblioteca ha respondido':'bibliotecas han respondido'} la encuesta`) +
+    (rr.length ? '' : `<div class="msg">${S.sede ? 'Esta biblioteca aún no responde la encuesta.' : 'Todavía no hay respuestas.'}</div>`) +
+    `<div class="grid2">
+      <div class="panel"><h3>¿La biblioteca está donde se concentran los estudiantes?</h3><p class="note">Ubicación de la biblioteca respecto del edificio principal de la sede, donde están las salas de clases.</p>${dist(singleCounts('2.1'))}</div>
+      <div class="panel"><h3>¿La biblioteca tiene planos actualizados?</h3><p class="note">Necesarios para proyectar remodelaciones o nuevos espacios.</p>${dist(singleCounts('2.2'))}</div>
+    </div>
+    <div class="panel"><h3>Equipamiento tecnológico disponible para estudiantes</h3><p class="note">${S.sede ? 'Equipos con que cuenta la biblioteca.' : 'Número de bibliotecas que cuentan con cada equipo.'}</p>${dist(optionCounts('3.1',equipo))}</div>
+    <div class="panel"><h3>Ubicación, planos y equipamiento de cada biblioteca</h3><div class="scroll"><table>
+      <thead><tr><th>Biblioteca</th><th>Ubicación en la sede</th><th>Planos actualizados</th><th>Equipamiento tecnológico</th></tr></thead>
+      <tbody>${sedes.map(s => { const r = S.resp.find(x => x.__sede === s);
+        return r ? `<tr><td>${esc(s)}</td><td>${esc(r[ub]||'–')}</td><td>${esc(r[pl]||'–')}</td><td>${esc(r[eq]||'–')}</td></tr>`
+                 : `<tr><td>${esc(s)}</td><td colspan="3"><span class="empty">sin respuesta</span></td></tr>`; }).join('')}</tbody>
+    </table></div></div>`;
+}
+
+/* ---------- Levantamiento: piezas comunes ---------- */
+const FREQ = ['1–2','3–5','6–10','Más de 10'];
+const freqClase = v => { const s = String(v || '').trim(); if (!s) return 's-empty'; if (norm(s) === 'no se realiza') return 's-none';
+  return {'1–2':'f1','3–5':'f2','6–10':'f3','Más de 10':'f4'}[s] || 's-empty'; };
+const corto = t => String(t).split(/ \/ | \(/)[0].trim();
+const sedesVista = () => S.sede ? [S.sede] : SEDES;
+const respDe = s => S.resp.find(x => x.__sede === s);
+const sinResp = rr => rr.length ? '' : `<div class="msg">${S.sede ? 'Esta biblioteca aún no responde la encuesta.' : 'Todavía no hay respuestas.'}</div>`;
+const tituloResp = rr => S.sede ? '' : `${rr.length} ${rr.length===1?'biblioteca ha respondido':'bibliotecas han respondido'} la encuesta`;
+
+// Matriz bibliotecas × temas: cada celda muestra la respuesta de esa biblioteca, con color.
+function matriz(cols, celda, leyenda){
+  if (!cols.length) return '<p class="empty">Sin respuestas todavía.</p>';
+  return `<div class="scroll"><table class="matrix"><thead><tr><th>Biblioteca</th>${cols.map(c => `<th class="rot" title="${esc(c.row)}">${esc(corto(c.row))}</th>`).join('')}</tr></thead><tbody>` +
+    sedesVista().map(s => { const r = respDe(s);
+      return `<tr><td>${esc(s)}</td>${cols.map(c => { const x = r ? celda(r, c) : {txt:'', cls:'s-empty', title:'sin respuesta'};
+        return `<td class="c ${x.cls}" title="${esc(c.row)}: ${esc(x.title ?? x.txt)}">${esc(x.txt)}</td>`; }).join('')}</tr>`; }).join('') +
+    `</tbody></table></div>${leyenda ? `<div class="keys">${leyenda}</div>` : ''}`;
+}
+// Selector para ver qué bibliotecas hacen un tema puntual.
+function detalle(id, etiqueta, items, filas, encabezados, nota){
+  if (!items.length) return '<p class="empty">Sin respuestas todavía.</p>';
+  S.det = S.det || {};
+  const sel = items.includes(S.det[id]) ? S.det[id] : items[0];
+  const f = filas(sel);
+  return `<label class="det-label">${etiqueta} <select class="det-select" data-det="${id}">${items.map(i => `<option${i===sel?' selected':''}>${esc(i)}</option>`).join('')}</select></label>
+    ${f.si.length ? `<div class="scroll"><table><thead><tr>${encabezados.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${f.si.map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : `<p class="empty">Ninguna biblioteca ${nota}.</p>`}
+    ${f.no.length ? `<p class="note" style="margin-top:10px"><b>No ${nota}:</b> ${esc(f.no.join(', '))}.</p>` : ''}`;
+}
+function activarDetalles(){
+  document.querySelectorAll('select.det-select').forEach(s => s.onchange = () => { S.det[s.dataset.det] = s.value; render(); });
+}
+
+/* ---------- Actividades extraprogramáticas ---------- */
+function renderActividades(){
+  const rr = respFor();
+  const fc = gridCols(S.respHeaders,'4.1'), oc = gridCols(S.respHeaders,'4.2');
+  const org = (r, row) => { const o = oc.find(x => x.row === row); return o ? r[o.h] : ''; };
+  const resumen = fc.map(c => ({ act:c.row, freq:FREQ.map(f => rr.filter(r => r[c.h] === f).length), n: rr.filter(r => r[c.h] && norm(r[c.h]) !== 'no se realiza').length })).sort((a,b) => b.n - a.n);
+  const otra = findCol(S.respHeaders,'4.3');
+  const otras = otra ? rr.filter(r => r[otra]) : [];
+
+  $('#view').innerHTML = scopeTitle(tituloResp(rr)) + sinResp(rr) +
+    (S.sede ? '' : `<div class="panel"><h3>¿Qué actividades se realizan y con qué frecuencia?</h3><p class="note">Charlas, clubes, exposiciones y otras actividades distintas de las inducciones y talleres formativos. Cuántas bibliotecas realizan cada actividad y cuántas veces al año.</p><div class="chart-box"><canvas id="cAct"></canvas></div></div>`) +
+    `<div class="panel"><h3>Actividades de cada biblioteca</h3><p class="note">Veces al año que cada biblioteca realiza cada actividad. Pasa el mouse sobre una celda para ver quién la organiza.</p>
+      ${matriz(fc, (r,c) => ({txt: norm(r[c.h]) === 'no se realiza' ? '–' : (r[c.h] || ''), cls: freqClase(r[c.h]), title: `${r[c.h] || 'sin respuesta'}${org(r,c.row) ? ' · organiza: ' + org(r,c.row) : ''}`}),
+        '<span><i class="f1"></i>1–2 al año</span><span><i class="f2"></i>3–5</span><span><i class="f3"></i>6–10</span><span><i class="f4"></i>Más de 10</span><span><i class="s-none"></i>No se realiza</span><span><i class="s-empty"></i>Sin respuesta</span>')}</div>
+    <div class="panel"><h3>Detalle por actividad</h3><p class="note">Elige una actividad para ver qué bibliotecas la realizan, con qué frecuencia y quién la organiza.</p>
+      ${detalle('act', 'Actividad:', fc.map(c => c.row), sel => { const c = fc.find(x => x.row === sel);
+        const hacen = rr.filter(r => r[c.h] && norm(r[c.h]) !== 'no se realiza');
+        return { si: hacen.sort((a,b) => FREQ.indexOf(b[c.h]) - FREQ.indexOf(a[c.h])).map(r => [r.__sede, r[c.h], org(r, sel) || '–']),
+                 no: rr.filter(r => !hacen.includes(r)).map(r => r.__sede) }; },
+        ['Biblioteca','Veces al año','Quién la organiza'], 'la realizan')}</div>
+    ${otras.length ? `<div class="panel"><h3>Otras actividades mencionadas</h3><p class="note">Actividades que las jefaturas agregaron fuera de la lista.</p><div class="scroll"><table><thead><tr><th>Biblioteca</th><th>Actividad</th></tr></thead><tbody>${otras.map(r => `<tr><td>${esc(r.__sede)}</td><td>${esc(r[otra])}</td></tr>`).join('')}</tbody></table></div></div>` : ''}`;
+
+  if (!S.sede){
+    const cols = ['#EEEEEE','#FFD466','#FFB800','#1A1A1A'];
+    chart('cAct',{type:'bar',data:{labels:resumen.map(a=>a.act),datasets:FREQ.map((f,i)=>({label:f+' veces al año',data:resumen.map(a=>a.freq[i]),backgroundColor:cols[i],borderColor:'#CCCCCC',borderWidth:i===0?1:0}))},
+      options:{indexAxis:'y',maintainAspectRatio:false,scales:{x:{stacked:true,ticks:{precision:0},title:{display:true,text:'N° de bibliotecas'}},y:{stacked:true}}}});
+  }
+  activarDetalles();
+}
+
+/* ---------- Articulación con la sede ---------- */
+function renderArticulacionSede(){
+  const rr = respFor();
+  const tc = gridCols(S.respHeaders,'5.1'), fq = gridCols(S.respHeaders,'5.2'), fo = gridCols(S.respHeaders,'5.3');
+  const val = (r, cols, row) => { const x = cols.find(c => c.row === row); return x ? (r[x.h] || '') : ''; };
+  const trabaja = (r, c) => r[c.h] && !multiHas(r[c.h],'No interactúa');
+  const resumen = tc.map(c => { const inter = rr.filter(r => trabaja(r,c));
+    const top = [...countBy(inter, r => val(r, fq, c.row))].filter(e => norm(e[0]) !== 'no aplica').sort((a,b)=>b[1]-a[1])[0];
+    return { u:c.row, n:inter.length, conj: rr.filter(r => multiHas(r[c.h],'Actividad conjunta')).length, formal: inter.filter(r => val(r, fo, c.row) === 'Formal').length, freq: top ? top[0] : '–' }; })
+    .sort((a,b) => b.n - a.n);
+  const colab = [];
+  rr.forEach(r => { for (let n = 1; n <= 3; n++){
+    const g = p => { const h = S.respHeaders.find(x => x.startsWith(p) && x.includes(`(${n})`)); return h ? r[h] : ''; };
+    const nombre = g('Nombre de la actividad'); if (nombre) colab.push({sede:r.__sede, nombre, socios:g('Unidad(es) socia'), freq:g('Frecuencia'), part:g('Participantes')});
+  }});
+  const otra = findCol(S.respHeaders,'5.4');
+  const otras = otra ? rr.filter(r => r[otra]) : [];
+
+  $('#view').innerHTML = scopeTitle(tituloResp(rr)) + sinResp(rr) +
+    (S.sede ? '' : `<div class="panel"><h3>Resumen por unidad de la sede</h3><p class="note">Cuántas bibliotecas trabajan con cada unidad, cuántas han hecho actividades en conjunto y cuántas tienen un acuerdo formal.</p><div class="scroll"><table><thead><tr><th>Unidad de la sede</th><th class="n">Bibliotecas que trabajan con ella</th><th class="n">Con actividades en conjunto</th><th class="n">Con acuerdo formal</th><th>Frecuencia habitual</th></tr></thead><tbody>${resumen.map(u => `<tr><td>${esc(u.u)}</td><td class="n">${u.n}</td><td class="n">${u.conj}</td><td class="n">${u.formal}</td><td>${esc(u.freq)}</td></tr>`).join('')}</tbody></table></div></div>`) +
+    `<div class="panel"><h3>Unidades con las que trabaja cada biblioteca</h3><p class="note">Cada celda indica si la relación es formal (con plan o acuerdo) o informal. Pasa el mouse sobre una celda para ver el tipo de trabajo y la frecuencia.</p>
+      ${matriz(tc, (r,c) => trabaja(r,c)
+        ? {txt: ['Formal','Informal'].includes(val(r, fo, c.row)) ? val(r, fo, c.row) : 'Sí', cls: {Formal:'fo', Informal:'fi'}[val(r, fo, c.row)] || 'f1', title:`${r[c.h]} · ${val(r, fq, c.row) || 'frecuencia sin dato'} · ${val(r, fo, c.row) || 'formalización sin dato'}`}
+        : {txt:'–', cls: r[c.h] ? 's-none' : 's-empty', title: r[c.h] ? 'No trabaja con esta unidad' : 'sin respuesta'},
+        '<span><i class="fo"></i>Relación formal</span><span><i class="fi"></i>Relación informal</span><span><i class="f1"></i>Trabaja con la unidad (sin dato de formalización)</span><span><i class="s-none"></i>No trabaja con la unidad</span><span><i class="s-empty"></i>Sin respuesta</span>')}</div>
+    <div class="panel"><h3>Detalle por unidad</h3><p class="note">Elige una unidad para ver qué bibliotecas trabajan con ella y cómo.</p>
+      ${detalle('uni', 'Unidad:', tc.map(c => c.row), sel => { const c = tc.find(x => x.row === sel);
+        const si = rr.filter(r => trabaja(r,c));
+        return { si: si.map(r => [r.__sede, r[c.h], val(r, fq, sel) || '–', val(r, fo, sel) || '–']), no: rr.filter(r => !si.includes(r)).map(r => r.__sede) }; },
+        ['Biblioteca','Tipo de trabajo','Frecuencia','Formalización'], 'trabajan con esta unidad')}</div>
+    <div class="panel"><h3>Actividades realizadas en conjunto con otras unidades</h3><p class="note">Ejemplos registrados por las jefaturas.</p>${colab.length ? `<div class="scroll"><table><thead><tr><th>Biblioteca</th><th>Actividad</th><th>Unidad(es) con que se realizó</th><th>Frecuencia</th><th class="n">Participantes aprox.</th></tr></thead><tbody>${colab.map(c => `<tr><td>${esc(c.sede)}</td><td>${esc(c.nombre)}</td><td>${esc(c.socios)}</td><td>${esc(c.freq)}</td><td class="n">${esc(c.part)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Todavía no hay actividades registradas.</p>'}</div>
+    ${otras.length ? `<div class="panel"><h3>Otras unidades mencionadas</h3><div class="scroll"><table><thead><tr><th>Biblioteca</th><th>Unidad y tipo de trabajo</th></tr></thead><tbody>${otras.map(r => `<tr><td>${esc(r.__sede)}</td><td>${esc(r[otra])}</td></tr>`).join('')}</tbody></table></div></div>` : ''}`;
+  activarDetalles();
+}
+
+/* ---------- Gobernanza y difusión ---------- */
+function renderGobernanza(){
+  const rr = respFor();
+  const c61 = findCol(S.respHeaders,'6.1'), c62 = findCol(S.respHeaders,'6.2'), c63 = findCol(S.respHeaders,'6.3'), c64 = findCol(S.respHeaders,'6.4');
+  const medios = ['Correo institucional','Redes sociales','Pantallas o afiches en sede','Docentes y Directores de Carrera','Portal de Bibliotecas'];
+  $('#view').innerHTML = scopeTitle(tituloResp(rr)) + sinResp(rr) +
+    (S.sede ? '' : `<div class="grid2">
+      <div class="panel"><h3>¿Quién decide si otras unidades pueden usar los espacios de la biblioteca?</h3>${dist(singleCounts('6.1'))}</div>
+      <div class="panel"><h3>¿La biblioteca participa en alguna instancia de coordinación de la sede?</h3><p class="note">Mesas, comités o reuniones periódicas.</p>${dist(singleCounts('6.2'))}</div>
+    </div>
+    <div class="panel"><h3>¿Cómo se difunden las actividades de la biblioteca en la sede?</h3><p class="note">Número de bibliotecas que usa cada medio.</p>${dist(optionCounts('6.4',medios))}</div>`) +
+    `<div class="panel"><h3>Gobernanza y difusión de cada biblioteca</h3><p class="note">Respuesta de cada jefatura.</p><div class="scroll"><table>
+      <thead><tr><th>Biblioteca</th><th>Quién decide el uso de los espacios</th><th>Instancia de coordinación</th><th>Cuál</th><th>Medios de difusión</th></tr></thead>
+      <tbody>${sedesVista().map(s => { const r = respDe(s);
+        return r ? `<tr><td>${esc(s)}</td><td>${esc(r[c61]||'–')}</td><td>${esc(r[c62]||'–')}</td><td>${esc((c63 && r[c63])||'–')}</td><td>${esc(r[c64]||'–')}</td></tr>`
+                 : `<tr><td>${esc(s)}</td><td colspan="4"><span class="empty">sin respuesta</span></td></tr>`; }).join('')}</tbody>
+    </table></div></div>
+    <div class="panel"><h3>Detalle por medio de difusión</h3><p class="note">Elige un medio para ver qué bibliotecas lo usan.</p>
+      ${detalle('med', 'Medio:', medios, sel => { const si = rr.filter(r => multiHas(r[c64], sel)); return { si: si.map(r => [r.__sede]), no: rr.filter(r => !si.includes(r)).map(r => r.__sede) }; },
+        ['Biblioteca'], 'lo usan')}</div>`;
+  activarDetalles();
+}
+
+/* ---------- Espacio prioritario ---------- */
+function renderPrioridades(){
+  const rr = respFor();
+  const pc = findCol(S.respHeaders,'3.2'), pq = findCol(S.respHeaders,'3.3');
+  $('#view').innerHTML = scopeTitle(tituloResp(rr)) + sinResp(rr) +
+    `<div class="panel"><h3>Espacio que las jefaturas priorizan habilitar o mejorar</h3><p class="note">Respuesta abierta de cada biblioteca y su justificación.</p><div class="scroll"><table>
+      <thead><tr><th>Biblioteca</th><th>Espacio que priorizaría</th><th>Por qué</th></tr></thead>
+      <tbody>${sedesVista().map(s => { const r = respDe(s);
+        return r ? `<tr><td>${esc(s)}</td><td>${esc((pc && r[pc]) || '–')}</td><td>${esc((pq && r[pq]) || '–')}</td></tr>`
+                 : `<tr><td>${esc(s)}</td><td colspan="2"><span class="empty">sin respuesta</span></td></tr>`; }).join('')}</tbody>
+    </table></div></div>`;
+}
+
+/* ---------- 5. Necesidades declaradas ---------- */
+function renderNecesidades(){
+  const campos = [
+    ['2.3','Espacio o equipamiento que falta, y qué impide hacer más actividades'],['2.4','Qué debería renovarse o cambiarse'],
+    ['4.3','Otra actividad que realiza'],['5.4','Otra unidad con la que trabaja'],
+    ['6.5','Colaboración que le gustaría iniciar o fortalecer'],['7.1','Comentarios finales']];
+  const rr = respFor().sort((a,b) => SEDES.indexOf(a.__sede) - SEDES.indexOf(b.__sede));
+  $('#view').innerHTML = scopeTitle('Lo que cada jefatura respondió en las preguntas abiertas') +
+    (rr.length ? rr.map(r => {
+      const items = campos.map(([p,l]) => { const c = findCol(S.respHeaders,p); return c && r[c] ? `<dt>${l}</dt><dd>${esc(r[c])}</dd>` : ''; }).join('');
+      return `<article class="voice"><h3>${esc(r.__sede)}</h3>${items ? `<dl>${items}</dl>` : '<p class="empty">Sin respuestas abiertas.</p>'}</article>`;
+    }).join('') : `<div class="msg">${S.sede ? 'Esta biblioteca aún no responde la encuesta.' : 'Todavía no hay respuestas.'}</div>`);
+}
+
+/* ================== DESCARGAS CON FORMATO (Excel, PDF, Word) ================== */
+const TITULO = `${DASH.nombre} · Observatorio de Bibliotecas Duoc UC`;
+const tabLabel = () => (TABS.find(t => t[0] === S.tab) || ['',''])[1];
+const ambito = () => S.sede || 'Toda la red';
+const hoy = () => new Date().toLocaleDateString('es-CL', {day:'numeric', month:'long', year:'numeric'});
+const slug = s => norm(s).replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,60);
+const nombreArchivo = (parte, ext) => `Observatorio_${slug(tabLabel())}${parte ? '_' + slug(parte) : ''}_${slug(ambito())}.${ext}`;
+const subtitulo = sub => `${tabLabel()}${sub ? ' · ' + sub : ''} · ${ambito()} · ${hoy()}`;
+const txt = n => (n?.textContent || '').replace(/[▲▼]/g,'').replace(/\s+/g,' ').trim();
+
+// "4.267" → 4267 (#,##0) · "13,3" → 13.3 (#,##0.0) · "5,7%" → 0.057 (0.0%) · el resto queda como texto
+function celda(t){
+  const s = String(t ?? '').trim();
+  if (/^-?[\d.]+(,\d+)?\s?%?\*?$/.test(s) && /\d/.test(s)){
+    const pct = s.includes('%'), dec = s.includes(',');
+    const n = parseFloat(s.replace(/[%*\s]/g,'').replace(/\./g,'').replace(',','.'));
+    if (!isNaN(n)) return { v: pct ? n/100 : n, fmt: pct ? '0.0%' : dec ? '#,##0.0' : '#,##0', num:true, t:s };
+  }
+  return { v: s === '–' ? '' : s, num:false, t: s === '–' ? '' : s };
+}
+// Lee un bloque del panel y lo convierte en partes ordenadas: subtítulos, tablas y gráficos.
+function extraer(el){
+  const titulo = txt(el.querySelector('h3'));
+  const nota = txt(el.querySelector('.note'));
+  const partes = [];
+  el.querySelectorAll('h3, table, .dist, canvas, dl').forEach(n => {
+    if (n.closest('.tools')) return;
+    if (n.tagName === 'H3'){ if (txt(n) !== titulo) partes.push({tipo:'sub', texto:txt(n)}); return; }
+    if (n.tagName === 'TABLE'){
+      const fila = tr => [...tr.children].map(c => txt(c));
+      partes.push({tipo:'tabla', head: n.tHead ? fila(n.tHead.rows[0]) : null,
+        body: [...(n.tBodies[0]?.rows || [])].map(fila), foot: n.tFoot ? fila(n.tFoot.rows[0]) : null});
+    } else if (n.classList.contains('dist')){
+      const c = [...n.children], body = [];
+      for (let i = 0; i < c.length; i += 3) body.push([txt(c[i]), txt(c[i+2])]);
+      partes.push({tipo:'tabla', head:['Categoría','N°'], body});
+    } else if (n.tagName === 'CANVAS'){
+      const ch = S.charts[n.id]; if (!ch) return;
+      const ds = ch.data.datasets;
+      partes.push({tipo:'grafico', canvas:n, head:['', ...ds.map(d => d.label || 'Valor')],
+        body: ch.data.labels.map((l,i) => [l, ...ds.map(d => d.data[i] == null ? '' : String(d.data[i]).replace('.', ','))])});
+    } else if (n.tagName === 'DL'){
+      partes.push({tipo:'tabla', head:['Dato','Detalle'], body:[...n.querySelectorAll('dt')].map(dt => [txt(dt), txt(dt.nextElementSibling)])});
+    }
+  });
+  return {titulo, nota, partes};
+}
+const kpisActuales = () => [...document.querySelectorAll('#view .kpi')].map(k => [txt(k.querySelector('small')), txt(k.querySelector('b'))]);
+function imagenGrafico(canvas, tipo = 'image/png'){
+  const c = document.createElement('canvas'); c.width = canvas.width; c.height = canvas.height;
+  const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0,0,c.width,c.height); x.drawImage(canvas,0,0);
+  return c.toDataURL(tipo, .92);
+}
+function bajar(blob, archivo){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = archivo;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ---------- Excel (ExcelJS) ---------- */
+const XL = { negro:'FF1A1A1A', amarillo:'FFFFB800', gris:'FF666666', claro:'FFF5F5F5', linea:'FFDDDDDD' };
+const borde = { top:{style:'thin',color:{argb:XL.linea}}, left:{style:'thin',color:{argb:XL.linea}}, bottom:{style:'thin',color:{argb:XL.linea}}, right:{style:'thin',color:{argb:XL.linea}} };
+function hojaExcel(wb, nombre){
+  let base = String(nombre || 'Hoja').replace(/[:\\/?*\[\]]/g,'').slice(0,28) || 'Hoja', n = base, i = 2;
+  while (wb.getWorksheet(n)) n = `${base.slice(0,26)} ${i++}`;
+  return wb.addWorksheet(n, { views:[{showGridLines:false}],
+    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0, margins:{left:.5,right:.5,top:.6,bottom:.6,header:.3,footer:.3}},
+    headerFooter:{oddFooter:`&L&8${TITULO}&R&8Página &P de &N`} });
+}
+function encabezadoHoja(ws, sub, ancho){
+  ws.mergeCells(1,1,1,ancho); ws.mergeCells(2,1,2,ancho);
+  const t = ws.getCell(1,1); t.value = TITULO;
+  t.font = {name:'Merriweather', size:14, bold:true, color:{argb:'FFFFFFFF'}};
+  t.fill = {type:'pattern', pattern:'solid', fgColor:{argb:XL.negro}}; t.alignment = {vertical:'middle', indent:1};
+  ws.getRow(1).height = 30;
+  const s = ws.getCell(2,1); s.value = subtitulo(sub);
+  s.font = {name:'Lato', size:10, color:{argb:XL.gris}}; s.alignment = {vertical:'middle', indent:1};
+  ws.getRow(2).height = 20;
+  for (let c = 1; c <= ancho; c++) ws.getCell(3,c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:XL.amarillo}};
+  ws.getRow(3).height = 4;
+  return 5;
+}
+function tablaExcel(ws, r, head, body, foot){
+  const anchoCol = [];
+  const medir = (i, v) => { anchoCol[i] = Math.max(anchoCol[i] || 0, String(v ?? '').length); };
+  if (head){
+    head.forEach((h,i) => { const c = ws.getCell(r, i+1); c.value = h;
+      c.font = {name:'Lato', bold:true, size:10, color:{argb:'FFFFFFFF'}};
+      c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:XL.negro}};
+      c.alignment = {vertical:'middle', wrapText:true}; c.border = borde; medir(i, h); });
+    ws.getRow(r).height = 22; r++;
+  }
+  body.forEach((fila, k) => {
+    fila.forEach((v,i) => { const d = celda(v), c = ws.getCell(r, i+1);
+      c.value = d.v; if (d.num) { c.numFmt = d.fmt; c.alignment = {horizontal:'right', vertical:'top'}; }
+      else c.alignment = {vertical:'top', wrapText: String(d.v).length > 45};
+      c.font = {name:'Lato', size:10, color:{argb:XL.negro}}; c.border = borde;
+      if (k % 2) c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:XL.claro}};
+      medir(i, d.t); });
+    r++;
+  });
+  if (foot){
+    foot.forEach((v,i) => { const d = celda(v), c = ws.getCell(r, i+1); c.value = d.v; if (d.num) { c.numFmt = d.fmt; c.alignment = {horizontal:'right'}; }
+      c.font = {name:'Lato', size:10, bold:true}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFEEEEEE'}};
+      c.border = {...borde, top:{style:'medium', color:{argb:XL.negro}}}; });
+    r++;
+  }
+  anchoCol.forEach((w,i) => { const col = ws.getColumn(i+1); col.width = Math.max(col.width || 0, Math.min(55, Math.max(12, w + 3))); });
+  return r + 1;
+}
+function bloqueExcel(wb, ws, r, b){
+  const ancho = Math.max(6, ...b.partes.map(p => (p.head || p.body?.[0] || []).length));
+  if (b.titulo){ const c = ws.getCell(r,1); c.value = b.titulo; c.font = {name:'Merriweather', size:12, bold:true}; r++; }
+  if (b.nota){ ws.mergeCells(r,1,r,ancho); const c = ws.getCell(r,1); c.value = b.nota;
+    c.font = {name:'Lato', size:9, italic:true, color:{argb:XL.gris}}; c.alignment = {wrapText:true, vertical:'top'};
+    ws.getRow(r).height = Math.min(60, 15 * Math.ceil(b.nota.length / 120)); r += 2; }
+  b.partes.forEach(p => {
+    if (p.tipo === 'sub'){ const c = ws.getCell(r,1); c.value = p.texto; c.font = {name:'Lato', size:11, bold:true}; r++; return; }
+    const ini = r;
+    r = tablaExcel(ws, r, p.head, p.body, p.foot);
+    if (p.tipo === 'grafico'){
+      const id = wb.addImage({base64: imagenGrafico(p.canvas), extension:'png'});
+      const w = 520, h = Math.round(w * p.canvas.height / p.canvas.width);
+      ws.addImage(id, {tl:{col:(p.head.length) + 1, row:ini - 1}, ext:{width:w, height:h}});
+      r = Math.max(r, ini + Math.ceil(h / 20) + 1);
+    }
+  });
+  return {r, ancho};
+}
+async function excel(bloques, archivo, conKPIs){
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Sistema de Bibliotecas Duoc UC'; wb.created = new Date();
+  const kp = conKPIs ? kpisActuales() : [];
+  if (kp.length){
+    const ws = hojaExcel(wb, 'Indicadores');
+    const r = encabezadoHoja(ws, 'Indicadores', 4);
+    tablaExcel(ws, r, ['Indicador','Valor'], kp.map(([l,v]) => [l.charAt(0).toUpperCase() + l.slice(1), v]));
+    ws.getColumn(1).width = 55;
+  }
+  bloques.forEach(b => {
+    const ws = hojaExcel(wb, b.titulo);
+    const r0 = encabezadoHoja(ws, b.titulo, 8);
+    bloqueExcel(wb, ws, r0, b);
+  });
+  if (!wb.worksheets.length){ const ws = hojaExcel(wb, tabLabel()); encabezadoHoja(ws, '', 6); ws.getCell(5,1).value = 'Sin datos.'; }
+  bajar(new Blob([await wb.xlsx.writeBuffer()], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), archivo);
+}
+async function excelNecesidades(voces, archivo){
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Sistema de Bibliotecas Duoc UC';
+  const ws = hojaExcel(wb, 'Necesidades declaradas');
+  const r = encabezadoHoja(ws, 'Respuestas abiertas de las jefaturas', 3);
+  const body = [];
+  voces.forEach(v => v.querySelectorAll('dt').forEach(dt => body.push([txt(v.querySelector('h3')), txt(dt), txt(dt.nextElementSibling)])));
+  tablaExcel(ws, r, ['Biblioteca','Pregunta','Respuesta'], body.length ? body : [['','Sin respuestas','']]);
+  ws.getColumn(1).width = 24; ws.getColumn(2).width = 40; ws.getColumn(3).width = 90;
+  ws.getColumn(3).alignment = {wrapText:true, vertical:'top'}; ws.getColumn(2).alignment = {wrapText:true, vertical:'top'};
+  bajar(new Blob([await wb.xlsx.writeBuffer()], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), archivo);
+}
+
+/* ---------- PDF (jsPDF + autoTable) ---------- */
+// La fuente estándar del PDF no tiene algunos símbolos: se reemplazan por equivalentes.
+const limpio = s => String(s ?? '').replace(/[–—]/g,'-').replace(/[✓✕⚠]/g,'').replace(/…/g,'...').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[▲▼]/g,'').trim();
+function pdfNuevo(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+  doc.setFont('helvetica','normal');
+  return doc;
+}
+const PDF = { W:297, H:210, M:14, top:26, bottom:16 };
+function pdfMarcos(doc, sub){
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i);
+    doc.setFillColor(26,26,26); doc.rect(0,0,PDF.W,15,'F');
+    doc.setFillColor(255,184,0); doc.rect(0,15,PDF.W,1.6,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text(limpio(TITULO), PDF.M, 9.8);
+    doc.setTextColor(102,102,102); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text(limpio(subtitulo(sub)), PDF.M, PDF.H - 7);
+    doc.text(`Página ${i} de ${n}`, PDF.W - PDF.M, PDF.H - 7, {align:'right'});
+  }
+}
+function pdfEspacio(doc, y, alto){ if (y + alto > PDF.H - PDF.bottom){ doc.addPage(); return PDF.top; } return y; }
+function pdfTituloSeccion(doc, y, sub){
+  doc.setTextColor(26,26,26); doc.setFont('helvetica','bold'); doc.setFontSize(17);
+  doc.text(limpio(sub || tabLabel()), PDF.M, y + 4);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(102,102,102);
+  doc.text(limpio(`${ambito()} · ${hoy()}`), PDF.M, y + 10);
+  return y + 17;
+}
+function pdfKPIs(doc, y, kp){
+  if (!kp.length) return y;
+  const porFila = 6, gap = 4, w = (PDF.W - 2*PDF.M - gap*(porFila-1)) / porFila, h = 21;
+  kp.forEach(([l,v], i) => {
+    const col = i % porFila; if (col === 0 && i) y += h + gap;
+    if (col === 0) y = pdfEspacio(doc, y, h);
+    const x = PDF.M + col*(w+gap);
+    doc.setFillColor(245,245,245); doc.rect(x, y, w, h, 'F');
+    doc.setFillColor(26,26,26); doc.rect(x, y, w, 1, 'F');
+    doc.setTextColor(26,26,26); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text(limpio(v), x + 3, y + 8.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(102,102,102);
+    doc.text(doc.splitTextToSize(limpio(l), w - 6).slice(0,3), x + 3, y + 13);
+  });
+  return y + h + 8;
+}
+function pdfTabla(doc, y, p, opciones = {}){
+  const numCols = (p.head || p.body[0] || []).map((_,i) => p.body.length && p.body.filter(f => f[i] !== '' && f[i] != null).every(f => celda(f[i]).num));
+  const colStyles = {}; numCols.forEach((n,i) => { if (n) colStyles[i] = {halign:'right'}; });
+  doc.autoTable({ startY:y, head: p.head ? [p.head.map(limpio)] : undefined, body: p.body.map(f => f.map(limpio)), foot: p.foot ? [p.foot.map(limpio)] : undefined,
+    theme:'grid', margin:{top:PDF.top, left:PDF.M, right:PDF.M, bottom:PDF.bottom},
+    styles:{font:'helvetica', fontSize:8.5, cellPadding:1.8, textColor:[26,26,26], lineColor:[221,221,221], lineWidth:.1, valign:'top', overflow:'linebreak'},
+    headStyles:{fillColor:[26,26,26], textColor:[255,255,255], fontStyle:'bold'},
+    footStyles:{fillColor:[238,238,238], textColor:[26,26,26], fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[247,247,247]}, columnStyles:{...colStyles, ...(opciones.columnStyles || {})},
+    tableWidth: opciones.ancho || 'auto' });
+  return doc.lastAutoTable.finalY + 7;
+}
+// Tamaño del gráfico en la página: ancho máximo de 200 mm y alto máximo de 95 mm, manteniendo la proporción.
+function medidaGrafico(canvas){
+  let w = Math.min(200, PDF.W - 2*PDF.M), h = w * canvas.height / canvas.width;
+  if (h > 95){ w = w * 95 / h; h = 95; }
+  return {w, h};
+}
+function pdfBloque(doc, y, b){
+  // El título se mantiene junto a su primer contenido: si no caben juntos, pasan a la página siguiente.
+  doc.setFontSize(8.5);
+  const altoNota = b.nota ? doc.splitTextToSize(limpio(b.nota), PDF.W - 2*PDF.M).length * 3.8 + 3 : 0;
+  const primero = b.partes[0];
+  const altoPrimero = !primero ? 0 : primero.tipo === 'grafico' ? medidaGrafico(primero.canvas).h : primero.tipo === 'tabla' ? Math.min(45, 9 + primero.body.length * 6) : 20;
+  y = pdfEspacio(doc, y, 12 + altoNota + altoPrimero);
+  doc.setFillColor(255,184,0); doc.rect(PDF.M, y - 4, 1.4, 6, 'F');
+  doc.setTextColor(26,26,26); doc.setFont('helvetica','bold'); doc.setFontSize(12.5);
+  doc.text(limpio(b.titulo), PDF.M + 4, y + .5); y += 6;
+  if (b.nota){
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(102,102,102);
+    const lineas = doc.splitTextToSize(limpio(b.nota), PDF.W - 2*PDF.M); doc.text(lineas, PDF.M, y + 1); y += lineas.length * 3.8 + 3;
+  }
+  b.partes.forEach(p => {
+    if (p.tipo === 'sub'){ y = pdfEspacio(doc, y, 40); doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(26,26,26); doc.text(limpio(p.texto), PDF.M, y + 2); y += 6; return; }
+    if (p.tipo === 'grafico'){
+      const {w, h} = medidaGrafico(p.canvas);
+      y = pdfEspacio(doc, y, h);
+      doc.addImage(imagenGrafico(p.canvas, 'image/jpeg'), 'JPEG', PDF.M, y, w, h); y += h + 6;
+      return;
+    }
+    y = pdfEspacio(doc, y, Math.min(45, 9 + p.body.length * 6));
+    y = pdfTabla(doc, y, p, p.head && p.head[0] === 'Dato' ? {columnStyles:{0:{fontStyle:'bold', cellWidth:70, fillColor:[245,245,245]}}} : {});
+  });
+  return y + 4;
+}
+function pdf(bloques, archivo, conKPIs, sub){
+  const doc = pdfNuevo();
+  let y = pdfTituloSeccion(doc, PDF.top, sub);
+  if (conKPIs) y = pdfKPIs(doc, y, kpisActuales());
+  bloques.forEach(b => { y = pdfBloque(doc, y, b); });
+  pdfMarcos(doc, sub);
+  doc.save(archivo);
+}
+function pdfNecesidades(voces, archivo, sub){
+  const doc = pdfNuevo();
+  let y = pdfTituloSeccion(doc, PDF.top, sub || 'Necesidades declaradas');
+  voces.forEach(v => {
+    y = pdfEspacio(doc, y, 30);
+    doc.setFillColor(255,184,0); doc.rect(PDF.M, y - 4, 1.4, 6, 'F');
+    doc.setTextColor(26,26,26); doc.setFont('helvetica','bold'); doc.setFontSize(12.5);
+    doc.text(limpio(txt(v.querySelector('h3'))), PDF.M + 4, y + .5); y += 6;
+    const body = [...v.querySelectorAll('dt')].map(dt => [txt(dt), txt(dt.nextElementSibling)]);
+    y = pdfTabla(doc, y, {head:['Pregunta','Respuesta'], body: body.length ? body : [['Sin respuestas abiertas','']]},
+      {columnStyles:{0:{fontStyle:'bold', cellWidth:80, fillColor:[245,245,245]}}}) + 3;
+  });
+  pdfMarcos(doc, sub || 'Necesidades declaradas');
+  doc.save(archivo);
+}
+
+/* ---------- Word (docx) ---------- */
+async function wordNecesidades(voces, archivo){
+  const D = window.docx;
+  const run = (t, o = {}) => new D.TextRun({text:t, font:o.font || 'Lato', size:o.size || 20, bold:o.bold, italics:o.italics, color:o.color || '1A1A1A'});
+  const celdaW = (t, o = {}) => new D.TableCell({ width:{size:o.ancho, type:D.WidthType.PERCENTAGE},
+    shading: o.fondo ? {type:D.ShadingType.CLEAR, color:'auto', fill:o.fondo} : undefined,
+    margins:{top:80, bottom:80, left:120, right:120},
+    children:[new D.Paragraph({children:[run(t, o)]})] });
+  const linea = {style:D.BorderStyle.SINGLE, size:4, color:'DDDDDD'};
+  const hijos = [
+    new D.Paragraph({spacing:{after:80}, children:[run(TITULO, {font:'Merriweather', size:32, bold:true})]}),
+    new D.Paragraph({spacing:{after:300}, border:{bottom:{style:D.BorderStyle.SINGLE, size:18, color:'FFB800', space:6}},
+      children:[run(`Necesidades declaradas por las jefaturas · ${ambito()} · ${hoy()}`, {color:'666666', size:20})]})
+  ];
+  voces.forEach(v => {
+    hijos.push(new D.Paragraph({spacing:{before:320, after:120}, keepNext:true, children:[run(txt(v.querySelector('h3')), {font:'Merriweather', size:26, bold:true})]}));
+    const filas = [...v.querySelectorAll('dt')].map(dt => new D.TableRow({cantSplit:true, children:[
+      celdaW(txt(dt), {ancho:32, fondo:'F2F2F2', bold:true, size:19}), celdaW(txt(dt.nextElementSibling), {ancho:68, size:20})]}));
+    hijos.push(filas.length
+      ? new D.Table({width:{size:100, type:D.WidthType.PERCENTAGE}, rows:filas,
+          borders:{top:linea, bottom:linea, left:linea, right:linea, insideHorizontal:linea, insideVertical:linea}})
+      : new D.Paragraph({children:[run('Sin respuestas abiertas.', {italics:true, color:'666666'})]}));
+  });
+  const doc = new D.Document({ creator:'Sistema de Bibliotecas Duoc UC', title:TITULO,
+    sections:[{ properties:{page:{margin:{top:1134, bottom:1134, left:1134, right:1134}}},
+      headers:{default:new D.Header({children:[new D.Paragraph({alignment:D.AlignmentType.RIGHT, children:[run('Bibliotecas Duoc UC', {size:16, color:'666666'})]})]})},
+      footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.RIGHT, children:[
+        new D.TextRun({children:['Página ', D.PageNumber.CURRENT, ' de ', D.PageNumber.TOTAL_PAGES], font:'Lato', size:16, color:'666666'})]})]})},
+      children:hijos }] });
+  bajar(await D.Packer.toBlob(doc), archivo);
+}
+
+/* ---------- Botones ---------- */
+function decorar(){
+  const scope = document.querySelector('#view .scope');
+  if (scope && !scope.querySelector('.dl-bar')){
+    const bar = document.createElement('div'); bar.className = 'dl-bar';
+    bar.innerHTML = `<span>Descargar sección:</span><button data-dl="sec-xlsx">Excel</button><button data-dl="sec-pdf">PDF</button>${S.tab === 'necesidades' ? '<button data-dl="sec-doc">Word</button>' : ''}`;
+    scope.appendChild(bar);
+  }
+  document.querySelectorAll('#view .panel').forEach(p => {
+    if (p.querySelector(':scope > .tools')) return;
+    const t = document.createElement('div'); t.className = 'tools';
+    t.innerHTML = `<button data-dl="xlsx" title="Descargar en Excel">Excel</button><button data-dl="pdf" title="Descargar en PDF">PDF</button>`;
+    p.prepend(t);
+  });
+  document.querySelectorAll('#view .voice').forEach(v => {
+    if (v.querySelector(':scope > .tools')) return;
+    const t = document.createElement('div'); t.className = 'tools';
+    t.innerHTML = `<button data-dl="doc" title="Descargar en Word">Word</button><button data-dl="pdf" title="Descargar en PDF">PDF</button>`;
+    v.prepend(t);
+  });
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-dl]'); if (!b) return;
+  const tipo = b.dataset.dl, bloque = b.closest('.panel, .voice');
+  const titulo = txt(bloque?.querySelector('h3'));
+  const voces = () => [...document.querySelectorAll('#view .voice')];
+  const paneles = () => [...document.querySelectorAll('#view .panel')].map(extraer);
+  b.disabled = true; const t0 = b.textContent; b.textContent = '…';
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    if (tipo === 'sec-xlsx') S.tab === 'necesidades' ? await excelNecesidades(voces(), nombreArchivo('','xlsx')) : await excel(paneles(), nombreArchivo('','xlsx'), true);
+    else if (tipo === 'sec-pdf') S.tab === 'necesidades' ? pdfNecesidades(voces(), nombreArchivo('','pdf')) : pdf(paneles(), nombreArchivo('','pdf'), true);
+    else if (tipo === 'sec-doc') await wordNecesidades(voces(), nombreArchivo('','docx'));
+    else if (tipo === 'xlsx') await excel([extraer(bloque)], nombreArchivo(titulo,'xlsx'), false);
+    else if (tipo === 'pdf') bloque.classList.contains('voice') ? pdfNecesidades([bloque], nombreArchivo(titulo,'pdf'), titulo) : pdf([extraer(bloque)], nombreArchivo(titulo,'pdf'), false, titulo);
+    else if (tipo === 'doc') await wordNecesidades([bloque], nombreArchivo(titulo,'docx'));
+  } catch (err) {
+    alert('No se pudo generar el archivo: ' + err.message);
+  } finally { b.disabled = false; b.textContent = t0; }
+});
+
+init().catch(e => { const est = $('#estado'); est.className = 'estado error'; est.textContent = '✕ No se pudieron cargar los datos. Intenta recargar la página.'; $('#messages').innerHTML = `<div class="msg err">Error al cargar el panel: ${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>
